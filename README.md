@@ -24,8 +24,8 @@ If properly installed the server can be started with:
 The server can be started manually by calling:
 
     webdavd config-file [config-file ...] 
-          where config-file is the path for the webdavd configuration file. Default is /etc/webdavd
     
+where config-file is the path for the webdavd configuration file. Default path is /etc/webdavd.
 See [Configuration](Configuration.md) for details of the config file.
 
 # Known Issues
