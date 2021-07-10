@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <uuid/uuid.h>
+#include <inttypes.h>
 
 ////////////////
 // Structures //
@@ -477,15 +478,21 @@ static RAP * createRap(RapList * db, const char * user, const char * password, c
 	Message message;
 	message.mID = RAP_REQUEST_AUTHENTICATE;
 	message.fd = -1;
-	message.paramCount = 3;
+	message.paramCount = 8;
 	message.params[RAP_PARAM_AUTH_USER] = stringToMessageParam(user);
 	message.params[RAP_PARAM_AUTH_PASSWORD] = stringToMessageParam(password);
 	message.params[RAP_PARAM_AUTH_RHOST] = stringToMessageParam(rhost);
+	message.params[RAP_PARAM_PGSQL_HOST] = stringToMessageParam(config.PgsqlHost);
+	message.params[RAP_PARAM_PGSQL_PORT] = stringToMessageParam(config.PgsqlPort);
+	message.params[RAP_PARAM_PGSQL_DATABASE] = stringToMessageParam(config.PgsqlDatabase);
+	message.params[RAP_PARAM_PGSQL_USER] = stringToMessageParam(config.PgsqlUser);
+	message.params[RAP_PARAM_PGSQL_PASSWORD] = stringToMessageParam(config.PgsqlPassword);
 	if (sendMessage(socketFd, &message) <= 0) {
+		stdLogError(0, "Authentication error");
 		close(socketFd);
 		return AUTH_ERROR;
 	}
-
+	
 	// Read Auth Result
 	char incomingBuffer[INCOMING_BUFFER_SIZE];
 	ssize_t readResult = recvMessage(socketFd, &message, incomingBuffer, INCOMING_BUFFER_SIZE);
@@ -1192,7 +1199,7 @@ static void fdContentReaderCleanup(void *cls) {
 }
 
 static Response * createFdResponse(int fd, uint64_t offset, uint64_t size, const char * mimeType, time_t date,
-		RAP * rapSession) {
+		RAP * rapSession, const char * fileName) {
 
 	FDResponseData * fdResponseData = mallocSafe(sizeof(*fdResponseData));
 	fdResponseData->fd = fd;
@@ -1206,10 +1213,20 @@ static Response * createFdResponse(int fd, uint64_t offset, uint64_t size, const
 		stdLogError(errno, "Could not create response");
 		exit(255);
 	}
+
 	char dateBuf[100];
+	char sizeBuf[100];
+	char fileNameBuf[100];
+	sprintf(sizeBuf, "%" PRIu64, size);
 	getWebDate(date, dateBuf, 100);
 	addHeader(response, "Content-Type", mimeType);
 	addHeader(response, "DAV", "1,2");
+	if (sizeof(fileName) != 0) {
+		sprintf(fileNameBuf, "inline; filename=\"%s\"", fileName);
+		addHeader(response, "Content-disposition", fileNameBuf);
+		addHeader(response, "Content-Transfer-Encoding", "binary");
+		addHeader(response, "Content-Length", sizeBuf);
+	}
 	addHeader(response, "Accept-Ranges", "bytes");
 	addHeader(response, "Last-Modified", dateBuf);
 	addHeader(response, "Server", "couling-webdavd");
@@ -1228,7 +1245,7 @@ static Response * createFileResponse(const char * fileName, const char * mimeTyp
 
 	struct stat statBuffer;
 	fstat(fd, &statBuffer);
-	return createFdResponse(fd, 0, statBuffer.st_size, mimeType, statBuffer.st_mtime, session);
+	return createFdResponse(fd, 0, statBuffer.st_size, mimeType, statBuffer.st_mtime, session, fileName);
 }
 
 static int processRangeHeader(off_t * offset, size_t * fileSize, const char *range) {
@@ -1336,7 +1353,7 @@ static int createResponseFromMessage(Request * request, Message * message, Respo
 						statusCode = MHD_HTTP_PARTIAL_CONTENT;
 					}
 				}
-				*response = createFdResponse(message->fd, offset, fileSize, mimeType, date, session);
+				*response = createFdResponse(message->fd, offset, fileSize, mimeType, date, session, "");
 
 				char contentRangeHeader[200];
 				snprintf(contentRangeHeader, sizeof(contentRangeHeader), "bytes %lld-%lld/%lld",
@@ -1344,10 +1361,10 @@ static int createResponseFromMessage(Request * request, Message * message, Respo
 
 				addHeader(*response, "Content-Range", contentRangeHeader);
 			} else {
-				*response = createFdResponse(message->fd, 0, stat.st_size, mimeType, date, session);
+				*response = createFdResponse(message->fd, 0, stat.st_size, mimeType, date, session, "");
 			}
 		} else {
-			*response = createFdResponse(message->fd, 0, -1, mimeType, date, session);
+			*response = createFdResponse(message->fd, 0, -1, mimeType, date, session, "");
 		}
 	}
 	return statusCode;

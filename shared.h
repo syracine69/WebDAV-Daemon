@@ -56,6 +56,11 @@ typedef enum RapConstant {
 #define RAP_PARAM_AUTH_USER         0
 #define RAP_PARAM_AUTH_PASSWORD     1
 #define RAP_PARAM_AUTH_RHOST        2
+#define RAP_PARAM_PGSQL_HOST        3
+#define RAP_PARAM_PGSQL_PORT        4
+#define RAP_PARAM_PGSQL_DATABASE    5
+#define RAP_PARAM_PGSQL_USER        6
+#define RAP_PARAM_PGSQL_PASSWORD    7
 
 // Generic Requet
 #define RAP_PARAM_REQUEST_LOCK      0
@@ -121,7 +126,7 @@ size_t getLocalDate(time_t rawtime, char * buf, size_t bufSize);
 void stdLog(const char * str, ...);
 void stdLogError(int errorNumber, const char * str, ...);
 
-#define MAX_MESSAGE_PARAMS 3
+#define MAX_MESSAGE_PARAMS 8
 #define INCOMING_BUFFER_SIZE 4096
 typedef struct iovec MessageParam;
 #define NULL_PARAM ( ( MessageParam ) { .iov_base = NULL, .iov_len = 0} )

@@ -37,6 +37,13 @@ typedef struct WebdavdConfiguration {
 	time_t rapMaxSessionLife;
 	time_t rapTimeoutRead;
 	const char * pamServiceName;
+	
+	// Postgresql
+	const char * PgsqlHost;
+	const char * PgsqlPort;
+	const char * PgsqlDatabase;
+	const char * PgsqlUser;
+	const char * PgsqlPassword;
 
 	// Max lock time
 	time_t maxLockTime;

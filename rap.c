@@ -12,6 +12,7 @@
 #include <dirent.h>
 #include <locale.h>
 #include <security/pam_appl.h>
+#include <libpq-fe.h>
 #include <stdlib.h>
 
 #define WEBDAV_NAMESPACE "DAV:"
@@ -22,6 +23,8 @@
 #define NEW_DIR_PREMISSIONS  0777
 
 #define IS_DIR_CHILD(name) ((name)[0] != '.' || ((name)[1] != '\0' && ((name)[1] != '.' || (name)[2] != '\0')))
+
+#define UNUSED(...) (void)(__VA_ARGS__)
 
 typedef struct MimeType {
 	const char * fileExtension;
@@ -34,7 +37,7 @@ static int authenticated = 0;
 static const char * authenticatedUser;
 static const char * pamService;
 static const char * chrootPath;
-static pam_handle_t *pamh;
+//static pam_handle_t *pamh;
 
 // Mime Database.
 static size_t mimeFileBufferSize;
@@ -124,6 +127,9 @@ static MimeType * findMimeType(const char * file) {
 	}
 
 	MimeType * result = bsearch(&type, mimeTypes, mimeTypeCount, sizeof(*mimeTypes), &compareExt);
+	if (result) {
+		result->typeStringSize = strlen(result->type) + 1;
+	}
 	return result ? result : &UNKNOWN_MIME_TYPE;
 }
 
@@ -1320,6 +1326,8 @@ static void listDir(const char * fileName, int dirFd, int writeFd) {
 	xmlTextWriterStartElement(writer, "html");
 	xmlTextWriterStartElement(writer, "head");
 	xmlTextWriterWriteElementString(writer, NULL, "title", fileName);
+	xmlTextWriterStartElement(writer, "meta"),
+	xmlTextWriterWriteAttribute(writer, "charset", "UTF-8");	
 	xmlTextWriterEndElement(writer);
 	xmlTextWriterStartElement(writer, "body");
 	xmlTextWriterWriteElementString(writer, NULL, "h1", fileName);
@@ -1352,6 +1360,8 @@ static void listDir(const char * fileName, int dirFd, int writeFd) {
 			xmlTextWriterWriteURL(writer, dp->d_name);
 			if (dp->d_type == DT_DIR) xmlTextWriterWriteString(writer, "/");
 			xmlTextWriterEndAttribute(writer);
+			//xmlTextWriterStartAttribute(writer, "download");
+			//xmlTextWriterEndAttribute(writer);
 			xmlTextWriterWriteString(writer, dp->d_name);
 			if (dp->d_type == DT_DIR) xmlTextWriterWriteString(writer, "/");
 			xmlTextWriterEndElement(writer);
@@ -1465,7 +1475,7 @@ static ssize_t readFile(Message * requestMessage) {
 //////////////////
 // Authenticate //
 //////////////////
-
+/*
 static int pamConverse(int n, const struct pam_message **msg, struct pam_response **resp, char * password) {
 	struct pam_response * response = mallocSafe(sizeof(struct pam_response));
 	response->resp_retcode = 0;
@@ -1480,56 +1490,79 @@ static void pamCleanup() {
 	int pamResult = pam_close_session(pamh, 0);
 	pam_end(pamh, pamResult);
 }
+*/
+static void exit_nicely(PGconn *conn) {
+	PQfinish(conn);
+	exit(1);
+}
 
-static int pamAuthenticate(const char * user, const char * password, const char * hostname) {
-	static struct pam_conv pamc = { .conv = (int (*)(int num_msg, const struct pam_message **msg,
-			struct pam_response **resp, void *appdata_ptr)) &pamConverse };
-	pamc.appdata_ptr = (void *) password;
-	char ** envList;
+static int pgsqlAuthenticate(const char * user, const char * password, const char * hostname, const char * pgsqlhost, const char * pgsqlport, const char * pgsqldatabase, const char * pgsqluser, const char * pgsqlpassword) {
+	const int MAX_BUFFER_LENGTH = 100;
+	char connString[MAX_BUFFER_LENGTH];
+	char query[MAX_BUFFER_LENGTH];
+	// sprintf(connString, "postgresql://%s:%s@%s:%s/%s", pgsqluser, pgsqlpassword, pgsqlhost, pgsqlport, pgsqldatabase);
+	PGconn * conn;
+        PGresult *res;
 
-	if (pam_start(pamService, user, &pamc, &pamh) != PAM_SUCCESS) {
-		stdLogError(0, "Could not start PAM");
-		return 0;
+	sprintf(connString, "host=%s port=%s dbname=%s user=%s password=%s", pgsqlhost, pgsqlport, pgsqldatabase, pgsqluser, pgsqlpassword);
+	
+	conn = PQconnectdb(connString);
+	if (PQstatus(conn) != CONNECTION_OK) {
+		stdLogError(0, "Connection to database failed: %s", PQerrorMessage(conn));
+		exit_nicely(conn);
 	}
 
-// Authenticate and start session
-	int pamResult;
-	if ((pamResult = pam_set_item(pamh, PAM_RHOST, hostname)) != PAM_SUCCESS
-			|| (pamResult = pam_set_item(pamh, PAM_RUSER, user)) != PAM_SUCCESS || (pamResult =
-					pam_authenticate(pamh, PAM_SILENT | PAM_DISALLOW_NULL_AUTHTOK)) != PAM_SUCCESS
-			|| (pamResult = pam_acct_mgmt(pamh, PAM_SILENT | PAM_DISALLOW_NULL_AUTHTOK)) != PAM_SUCCESS
-			|| (pamResult = pam_setcred(pamh, PAM_ESTABLISH_CRED)) != PAM_SUCCESS || (pamResult =
-					pam_open_session(pamh, 0)) != PAM_SUCCESS) {
-		pam_end(pamh, pamResult);
-		return 0;
+	//stdLog(0, "Successfully connected to database");
+
+	sprintf(query, "SELECT username FROM users WHERE username = '%s' AND password = md5('%s')", user, password);
+
+	res = PQexec(conn, query);
+	if (PQresultStatus(res) != PGRES_TUPLES_OK) {
+		stdLogError(0, "Query to database failed: %s", PQerrorMessage(conn));
+		PQclear(res);
+		exit_nicely(conn);
 	}
-
-// Get user details
-	if ((pamResult = pam_get_item(pamh, PAM_USER, (const void **) &user)) != PAM_SUCCESS || (envList =
-			pam_getenvlist(pamh)) == NULL) {
-
-		pamResult = pam_close_session(pamh, 0);
-		pam_end(pamh, pamResult);
-
-		return 0;
+	
+	int nFields = PQnfields(res);
+	for(int i = 0; i < PQntuples(res); i++) {
+		int j = 0;
+		if (j < nFields) {
+			char username[50];
+			sprintf(username, "%s", PQgetvalue(res, i, j));
+			if (strcmp(username, user) == 0) {
+				authenticated = 1;
+				PQclear(res);
+				// Record time of access
+				memset(query, 0, MAX_BUFFER_LENGTH);	
+				sprintf(query, "UPDATE users SET last_login = now() WHERE username = '%s'", user);
+				res = PQexec(conn, query);
+				if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+					stdLogError(0, "Query to database failed: %s", PQerrorMessage(conn));
+					PQclear(res);
+					exit_nicely(conn);
+				}
+			}
+		}
 	}
+	
+	PQclear(res);
 
-// Set up environment and switch user
+	PQfinish(conn);
+
+	// Authentication failed
+	if (authenticated != 1) {
+		stdLogError(0, "Authentication failed");
+		return 0;	
+	}
+	
+	// Set up environment and switch user
 	clearenv();
-	for (char ** pam_env = envList; *pam_env != NULL; ++pam_env) {
-		putenv(*pam_env);
-		freeSafe(*pam_env);
-	}
-	freeSafe(envList);
 
 	if (!lockToUser(user, chrootPath)) {
 		stdLogError(errno, "Could not set uid or gid");
-		pam_close_session(pamh, 0);
-		pam_end(pamh, pamResult);
 		return 0;
 	}
 
-	atexit(&pamCleanup);
 	size_t userLen = strlen(user) + 1;
 	authenticatedUser = mallocSafe(userLen);
 	memcpy((char *) authenticatedUser, user, userLen);
@@ -1538,7 +1571,7 @@ static int pamAuthenticate(const char * user, const char * password, const char 
 	return 1;
 }
 
-static ssize_t authenticate(Message * message) {
+static ssize_t authenticatePgsql(Message * message) {
 	if (message->fd != -1) {
 		stdLogError(0, "authenticate request send incoming data!");
 		close(message->fd);
@@ -1547,14 +1580,20 @@ static ssize_t authenticate(Message * message) {
 	char * user = messageParamToString(&message->params[RAP_PARAM_AUTH_USER]);
 	char * password = messageParamToString(&message->params[RAP_PARAM_AUTH_PASSWORD]);
 	char * rhost = messageParamToString(&message->params[RAP_PARAM_AUTH_RHOST]);
+	char * pgsqlhost = messageParamToString(&message->params[RAP_PARAM_PGSQL_HOST]);
+	char * pgsqlport = messageParamToString(&message->params[RAP_PARAM_PGSQL_PORT]);
+	char * pgsqldatabase = messageParamToString(&message->params[RAP_PARAM_PGSQL_DATABASE]);
+	char * pgsqluser = messageParamToString(&message->params[RAP_PARAM_PGSQL_USER]);
+	char * pgsqlpassword = messageParamToString(&message->params[RAP_PARAM_PGSQL_PASSWORD]);
 
-	if (pamAuthenticate(user, password, rhost)) {
+	if (pgsqlAuthenticate(user, password, rhost, pgsqlhost, pgsqlport, pgsqldatabase, pgsqluser, pgsqlpassword)) {
 		//stdLog("Login accepted for %s", user);
 		return respond(RAP_RESPOND_OK);
 	} else {
 		return respond(RAP_RESPOND_AUTH_FAILLED);
 	}
 }
+
 
 //////////////////////
 // End Authenticate //
@@ -1585,7 +1624,7 @@ int main(int argCount, char * args[]) {
 		}
 
 		if (message.mID == RAP_REQUEST_AUTHENTICATE) {
-			ioResult = authenticate(&message);
+			ioResult = authenticatePgsql(&message);
 		} else {
 			stdLogError(0, "Invalid request id %d on unauthenticted worker", message.mID);
 			ioResult = respond(RAP_RESPOND_INTERNAL_ERROR);

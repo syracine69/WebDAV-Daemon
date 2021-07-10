@@ -192,6 +192,32 @@ static int configPamService(WebdavdConfiguration * config, xmlTextReaderPtr read
 	return readConfigString(reader, &config->pamServiceName);
 }
 
+static int configPgsqlHost(WebdavdConfiguration * config, xmlTextReaderPtr reader, const char * configFile) {
+	//<pgsql-host>www.example.com</pgsql-host>
+	return readConfigString(reader, &config->PgsqlHost);
+}
+
+static int configPgsqlPort(WebdavdConfiguration * config, xmlTextReaderPtr reader,
+		const char * configFile) {
+	// <pgsql-port>5432</pgsql-port>
+	return readConfigString(reader, &config->PgsqlPort);
+}
+
+static int configPgsqlDatabase(WebdavdConfiguration * config, xmlTextReaderPtr reader, const char * configFile) {
+	//<pgsql-database>postgres</pgsql-database>
+	return readConfigString(reader, &config->PgsqlDatabase);
+}
+
+static int configPgsqlUser(WebdavdConfiguration * config, xmlTextReaderPtr reader, const char * configFile) {
+	//<pgsql-user>postgres</pgsql-user>
+	return readConfigString(reader, &config->PgsqlUser);
+}
+
+static int configPgsqlPassword(WebdavdConfiguration * config, xmlTextReaderPtr reader, const char * configFile) {
+	//<pgsql-password>*****</pgsql-password>
+	return readConfigString(reader, &config->PgsqlPassword);
+}
+
 static int configAccessLog(WebdavdConfiguration * config, xmlTextReaderPtr reader, const char * configFile) {
 	return readConfigString(reader, &config->accessLog);
 }
@@ -310,6 +336,11 @@ static const ConfigurationFunction configFunctions[] = {
 		{ .nodeName = "max-lock-time", .func = &configMaxLockTime },           // <max-lock-time />
 		{ .nodeName = "mime-file", .func = &configMimeFile },                  // <mime-file />
 		{ .nodeName = "pam-service", .func = &configPamService },              // <pam-service />
+		{ .nodeName = "pgsql-database", .func = &configPgsqlDatabase },        // <pgsql-database />
+		{ .nodeName = "pgsql-host", .func = &configPgsqlHost },                // <pgsql-host />
+		{ .nodeName = "pgsql-password", .func = &configPgsqlPassword },        // <pgsql-password />
+		{ .nodeName = "pgsql-port", .func = &configPgsqlPort },                // <pgsql-port />
+		{ .nodeName = "pgsql-user", .func = &configPgsqlUser },                // <pgsql-user />
 		{ .nodeName = "rap-binary", .func = &configRapBinary },                // <rap-binary />
 		{ .nodeName = "rap-timeout", .func = &configRapTimeout },              // <rap-timeout />
 		{ .nodeName = "restricted", .func = &configRestricted },               // <restricted />
@@ -369,13 +400,24 @@ static int configureServer(WebdavdConfiguration * config, xmlTextReaderPtr reade
 	if (!config->pamServiceName) {
 		config->pamServiceName = "webdavd";
 	}
+	if (!config->PgsqlHost) {
+		config->PgsqlHost = "localhost";
+	}
+	if (!config->PgsqlPort) {
+		config->PgsqlPort = "5432";
+	}
+	if (!config->PgsqlDatabase) {
+		config->PgsqlDatabase = "postgres";
+	}
+	if (!config->PgsqlUser) {
+		config->PgsqlUser = "postgres";
+	}
 	if (!config->maxLockTime) {
 		config->maxLockTime = 60;
 	}
 	if (!config->restrictedUser) {
 		config->restrictedUser = "root";
 	}
-
 	return result;
 }
 

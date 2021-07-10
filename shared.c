@@ -254,16 +254,17 @@ MessageParam stringToMessageParam(const char * string) {
 }
 
 int lockToUser(const char * user, const char * chrootDir) {
-	struct passwd * pwd = getpwnam(user);
-	if (!pwd) {
+	//struct passwd * pwd = getpwnam(user);
+	if (!user) {
 		stdLogError(errno, "Could not find user %s", user);
 		return 0;
 	}
+
 	if (chrootDir) {
 		const char * actualChrootDir;
 		char buffer[PATH_MAX];
 		if (chrootDir[0] == '~' && (chrootDir[1] == '/' || chrootDir[1] == '\0')) {
-			snprintf(buffer, sizeof(buffer), "%s%s", pwd->pw_dir, chrootDir + 1);
+			snprintf(buffer, sizeof(buffer), "%s/%s", chrootDir + 1, user );
 			actualChrootDir = buffer;
 		} else {
 			actualChrootDir = chrootDir;
@@ -274,10 +275,11 @@ int lockToUser(const char * user, const char * chrootDir) {
 			return 0;
 		}
 	}
-	if (initgroups(user, pwd->pw_gid) || setgid(pwd->pw_gid) || setuid(pwd->pw_uid)) {
+	/*if (initgroups(user, pwd->pw_gid) || setgid(pwd->pw_gid) || setuid(pwd->pw_uid)) {
 		stdLogError(errno, "Could not lock down to user %s", user);
 		return 0;
 	}
+	*/
 	return 1;
 }
 
