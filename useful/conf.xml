@@ -10,6 +10,11 @@
 			<encryption>ssl</encryption>
 		</listen>
 		<rap-binary>build/rap</rap-binary>
+		<pgsql-host>127.0.0.1</pgsql-host>
+		<pgsql-port>5432</pgsql-port>
+		<pgsql-database>my_database</pgsql-database>
+		<pgsql-user>my_user</pgsql-user>
+		<pgsql-password>my_password</pgsql-password>
 		<static-response-dir>package-with/share</static-response-dir>
 		<ssl-cert>
 			<certificate>/etc/ssl/certs/local/server.crt</certificate>
