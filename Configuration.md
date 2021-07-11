@@ -44,7 +44,9 @@ Example
 
     <server-config xmlns="http://couling.me/webdavd">
         <server>
-            <listen><port>80</port></listen>
+            <listen>
+		<port>80</port>
+	    </listen>
         </server>
     </server-config>
 
@@ -116,8 +118,12 @@ Specifies the length of PAM session to be used by the server.  All sessions will
 Example - Keep PAM sessions open for an hour
 
     <server-config xmlns="http://couling.me/webdavd">
-        <session-timeout>01:00:00</session-timeout>
-        <server><listen><port>80</port></listen></server>
+        <server>
+		<listen><
+			port>80</port>
+		</listen>
+        	<session-timeout>01:00:00</session-timeout>
+	</server>
     </server-config>
 
 
@@ -127,8 +133,12 @@ To identify mime types from file extensions webdavd needs a `mime.types` file.  
 Example - Uses an alternative mime file: `/usr/share/alternate/mime.types`
 
     <server-config xmlns="http://couling.me/webdavd">
-        <mime-file>/usr/share/alternate/mime.types</mime-file>
-        <server><listen><port>80</port></listen></server>
+        <server>
+		<listen>
+			<port>80</port>
+		</listen>
+        	<mime-file>/usr/share/alternate/mime.types</mime-file>
+	</server>
     </server-config>
 
 ## `<rap-binary>`
@@ -137,8 +147,12 @@ webdavd is a binary in two parts.  The worker threads run a binary called the "r
 Example - Specifies the worker thread binary (rap) as being `/usr/lib/webdav/webdav-worker`
 
     <server-config xmlns="http://couling.me/webdavd">
-        <rap-binary>/usr/sbin/webdav-worker</rap-binary>
-        <server><listen><port>80</port></listen></server>
+        <server>
+		<listen>
+			<port>80</port>
+		</listen>
+        	<rap-binary>/usr/sbin/webdav-worker</rap-binary>
+	</server>
     </server-config>
 
 ## `<rap-timeout>`
@@ -147,8 +161,12 @@ Communication with the worker threads should be rapid.  There are no long operat
 Example
 
     <server-config xmlns="http://couling.me/webdavd">
-        <rap-timeout>/usr/sbin/webdav-worker</rap-timeout>
-        <server><listen><port>80</port></listen></server>
+        <server>
+		<listen>
+			<port>80</port>
+		</listen>
+        	<rap-timeout>/usr/sbin/webdav-worker</rap-timeout>
+	</server>
     </server-config>
 
 ## `<pam-service>`
@@ -157,24 +175,83 @@ The service name used to configure PAM.  This is `webdavd` by default.  On many 
 Example
 
     <server-config xmlns="http://couling.me/webdavd">
-        <pam-service>dav</pam-service>
-        <server><listen><port>80</port></listen></server>
+        <server>
+		<listen>
+			<port>80</port>
+		</listen>
+        	<pam-service>dav</pam-service>
+	</server>
     </server-config>
 
 ## `<pgsql-host>`
 The hostname or the IP address to connect the Postgresql database. Default to localhost.
 
+Example
+
+    <server-config xmlns="http://couling.me/webdavd">
+        <server>
+		<listen>
+			<port>80</port>
+		</listen>
+        	<pgsql-host>myownserver.com</pgsql-host>
+	</server>
+    </server-config>
+
 ## `<pgsql-port>`
 The port to connect to the Postgresql database. Default to 5432.
+
+Example
+
+    <server-config xmlns="http://couling.me/webdavd">
+        <server>
+		<listen>
+			<port>80</port>
+		</listen>
+        	<pgsql-port>5433</pgsql-port>
+	</server>
+    </server-config>
 
 ## `<pgsql-database>`
 The database name to connect to that contains users table to authenticate the web server. Default to postgres.
 
+Example
+
+    <server-config xmlns="http://couling.me/webdavd">
+        <server>
+		<listen>
+			<port>80</port>
+		</listen>
+        	<pgsql-database>my_database</pgsql-database>
+	</server>
+    </server-config>
+
 ## `<pgsql-user>`
 The user to connect to the Postgresql database. Default to postgres.
 
+Example
+
+    <server-config xmlns="http://couling.me/webdavd">
+        <server>
+		<listen>
+			<port>80</port>
+		</listen>
+        	<pgsql-user>my_user</pgsql-user>
+	</server>
+    </server-config>
+
 ## `<pgsql-password>`
-The password to connect to the Postgresql database. There is no default value.
+The password to connect to the Postgresql database. There is no default value. Note that the password must be in clear text.
+
+Example
+
+    <server-config xmlns="http://couling.me/webdavd">
+        <server>
+		<listen>
+			<port>80</port>
+		</listen>
+        	<pgsql-password>my_password</pgsql-password>
+	</server>
+    </server-config>
 
 ## `<static-response-dir>`
 Some error pages (eg 404) from the webdavd are static and specified separate files.  These are all stored in a single directory.  This tag specifies the location of the directory.  Default is: `/usr/share/webdav`
@@ -182,8 +259,12 @@ Some error pages (eg 404) from the webdavd are static and specified separate fil
 Example
 
     <server-config xmlns="http://couling.me/webdavd">
-        <static-response-dir>/usr/share/custom/webdav</static-response-dir>
-        <server><listen><port>80</port></listen></server>
+        <server>
+		<listen>
+			<port>80</port>
+		</listen>
+        	<static-response-dir>/usr/share/custom/webdav</static-response-dir>
+	</server>
     </server-config>
 
 ## `<max-lock-time>`
@@ -193,8 +274,12 @@ Maximum time allowed for clients to lock a file. See [Time Format](#Time Format)
 Example
 
     <server-config xmlns="http://couling.me/webdavd">
-        <max-lock-time>10:00</max-lock-time>
-        <server><listen><port>80</port></listen></server>
+        <server>
+		<listen>
+			<port>80</port>
+		</listen>
+        	<max-lock-time>10:00</max-lock-time>
+	</server>
     </server-config>
 
 ## `<error-log>`
@@ -203,9 +288,13 @@ The location to write the error log.  If unspecified the error log will be writt
 Example
 
     <server-config xmlns="http://couling.me/webdavd">
-        <access-log>/var/log/webdav-access.log</access-log>
-        <error-log>/var/log/webdav-error.log</error-log>
-        <server><listen><port>80</port></listen></server>
+        <server>
+		<listen>
+			<port>80</port>
+		</listen>
+        	<access-log>/var/log/webdav-access.log</access-log>
+        	<error-log>/var/log/webdav-error.log</error-log>
+	</server>
     </server-config>
 
 ## `<access-log>`
@@ -214,9 +303,13 @@ The location to write the access log.  If unspecified the access log will be wri
 Example
 
     <server-config xmlns="http://couling.me/webdavd">
-        <access-log>/var/log/webdav-access.log</access-log>
-        <error-log>/var/log/webdav-error.log</error-log>
-        <server><listen><port>80</port></listen></server>
+        <server>
+		<listen>
+			<port>80</port>
+		</listen>
+        	<access-log>/var/log/webdav-access.log</access-log>
+        i	<error-log>/var/log/webdav-error.log</error-log>
+	</server>
     </server-config>
 
 ## `<ssl-cert>`
@@ -252,8 +345,12 @@ Note that this exposes the features of the server to everyone requesting them.
 Example
 
     <server-config xmlns="http://couling.me/webdavd">
-        <unprotect-options>true</unprotect-options>
-        <server><listen><port>80</port></listen></server>
+        <server>
+		<listen>
+			<port>80</port>
+		</listen>
+        	<unprotect-options>true</unprotect-options>
+	</server>
     </server-config>
 
 ## Time Format
