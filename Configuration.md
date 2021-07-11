@@ -29,6 +29,11 @@ Contains
 - [`<rap-binary>`](#rap-binary)
 - [`<rap-timeout>`](#rap-timeout)
 - [`<pam-service>`](#pam-service)
+- [`<pgsql-host>`](#pgsql-host)
+- [`<pgsql-port>`](#pgsql-port)
+- [`<pgsql-database>`](#pgsql-database)
+- [`<pgsql-user`](#pgsql-user)
+- [`<pgsql-password`](#pgsql-password)
 - [`<static-response-dir>`](#static-response-dir)
 - [`<max-lock-time>`](#max-lock-time)
 - [`<error-log>`](#error-log)
@@ -155,6 +160,21 @@ Example
         <pam-service>dav</pam-service>
         <server><listen><port>80</port></listen></server>
     </server-config>
+
+## `<pgsql-host>`
+The hostname or the IP address to connect the Postgresql database. Default to localhost.
+
+## `<pgsql-port>`
+The port to connect to the Postgresql database. Default to 5432.
+
+## `<pgsql-database>`
+The database name to connect to that contains users table to authenticate the web server. Default to postgres.
+
+## `<pgsql-user>`
+The user to connect to the Postgresql database. Default to postgres.
+
+## `<pgsql-password>`
+The password to connect to the Postgresql database. There is no default value.
 
 ## `<static-response-dir>`
 Some error pages (eg 404) from the webdavd are static and specified separate files.  These are all stored in a single directory.  This tag specifies the location of the directory.  Default is: `/usr/share/webdav`
