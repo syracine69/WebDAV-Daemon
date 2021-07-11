@@ -28,6 +28,10 @@ The server can be started manually by calling:
 where config-file is the path for the webdavd configuration file. Default path is /etc/webdavd.
 See [Configuration](Configuration.md) for details of the config file.
 
+# Setup the database
+
+To enable SQL authentication with Posgresql, you have to create a SQL user (or role), a database and to populate with your users. See [Database](Database.md) for details of the creation of the database.
+
 # Known Issues
 
  - Locking file is limited and it is currently not possible to lock a directory
