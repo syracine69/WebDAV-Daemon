@@ -45,7 +45,7 @@ See [Configuration](Configuration.md) for details of the config file.
     sudo apt-get install gcc libmicrohttpd-dev libpq-dev libxml2-dev libgnutls28-dev uuid-dev
     make
 
-### Packaging into a dpkg (Not yet tested: help is welcom!)
+### Packaging into a dpkg (Not yet tested: help is welcome!
 
 To assemble everything into a DPKG you can either read one of the manifest files [`package-control/manifest.ubuntu`](package-control/manifest.ubuntu) or [`package-control/manifest.rpi`](package-control/manifest.rpi)
 
