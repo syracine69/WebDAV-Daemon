@@ -46,7 +46,7 @@ To enable SQL authentication with Posgresql, you have to create a SQL user (or r
 
 ### Under Raspbian (Not yet tested: help is welcome!)
 
-    sudo apt-get install gcc libmicrohttpd-dev libpq-dev libxml2-dev libgnutls28-dev uuid-dev
+    sudo apt-get install gcc libmicrohttpd-dev libpq-dev libxml2-dev libgnutls28-dev uuid-dev libpam0g-dev
     make
 
 ### Packaging into a dpkg (Not yet tested: help is welcome!)
